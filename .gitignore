@@ -1,0 +1,9 @@
+# vim temp files
+*.swp
+
+# cmake
+build/
+*.cmake
+CMakeCache.txt
+CMakeFiles/
+Testing/
