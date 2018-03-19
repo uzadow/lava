@@ -1,5 +1,4 @@
-#ifndef _Exception_H_
-#define _Exception_H_
+#pragma once
 
 #include <string>
 #include <exception>
@@ -32,4 +31,3 @@ void lavaAssert(bool b, const char * pszFile, int line, const char * pszReason=0
 
 }
 
-#endif

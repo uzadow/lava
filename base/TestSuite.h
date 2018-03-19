@@ -1,5 +1,4 @@
-#ifndef _TestSuite_H_ 
-#define _TestSuite_H_
+#pragma once
 
 #include "Test.h"
 
@@ -21,5 +20,4 @@ private:
 };
     
 }
-#endif
 

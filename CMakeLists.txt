@@ -14,9 +14,5 @@ if(NOT CMAKE_BUILD_TYPE)
        FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
-add_library(base
-    Test.cpp TestSuite.cpp Exception.cpp)
 
-link_libraries(base)
-add_executable(testbase testbase.cpp)
-
+add_subdirectory(base)

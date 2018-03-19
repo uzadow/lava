@@ -1,5 +1,4 @@
-#ifndef _Test_H_ 
-#define _Test_H_
+#pragma once
 
 #include <iostream>
 #include <string>
@@ -61,5 +60,4 @@ typedef std::shared_ptr<Test> TestPtr;
     }                                      \
     test(b, __FILE__, __LINE__);
 }
-#endif
 
