@@ -34,6 +34,7 @@ public:
     void save(const std::string& sName) const;
     
     glm::ivec2 getSize() const;
+    glm::ivec2 getPlaneSize(unsigned i) const;
     int getStride(unsigned i) const;
     PixelFormat getPixelFormat() const;
     uint8_t* getPixels(unsigned i);

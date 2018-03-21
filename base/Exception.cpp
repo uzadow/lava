@@ -20,8 +20,6 @@
 //
 
 #include "Exception.h"
-//#include "Backtrace.h"
-//#include "OSHelper.h"
 
 #include <cstdlib>
 #include <sstream>
@@ -38,17 +36,8 @@ Exception::Exception(const string& sErr)
 
 Exception::Exception(const Exception& ex)
     : std::exception(),
-      m_sErr (ex.getStr())
+      m_sErr (ex.m_sErr)
 {
-}
-
-Exception::~Exception() throw()
-{
-}
-
-const string& Exception::getStr() const
-{
-    return m_sErr;
 }
 
 const char* Exception::what() const throw()

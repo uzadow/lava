@@ -31,7 +31,7 @@ void TestSuite::runTests()
             aggregateStatistics(*m_Tests[i]);
             m_Tests[i]->printResults();
         } catch (Exception& ex) {
-            cerr << string(getIndentLevel(), ' ') << ex.getStr() << endl;
+            cerr << string(getIndentLevel(), ' ') << ex.what() << endl;
             setFailed();
         } catch (std::exception& ex) {
             cerr << string(getIndentLevel(), ' ') << "    ---->> failed, std::exception: " << ex.what() << endl;

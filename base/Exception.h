@@ -11,17 +11,11 @@ class Exception: public std::exception
     public:
         Exception(const std::string& sErr = "");
         Exception(const Exception& ex);
-        virtual ~Exception() throw();
-        virtual const std::string& getStr() const;
         virtual const char* what() const throw();
 
     private:
         std::string m_sErr;
 };
-
-#ifdef _WIN32
-    #pragma warning(pop)
-#endif
 
 void debugBreak();
 void lavaAssert(bool b, const char * pszFile, int line, const char * pszReason=0);
