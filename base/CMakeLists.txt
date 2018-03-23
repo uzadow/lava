@@ -5,6 +5,7 @@ add_library(base
     GLMHelper.cpp
     MathHelper.cpp
     PixelFormat.cpp
+    StringHelper.cpp
     Test.cpp 
     TestSuite.cpp)
 

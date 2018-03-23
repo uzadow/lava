@@ -5,7 +5,7 @@
 
 using namespace std;
 
-namespace avg {
+namespace lava {
 
 bool ispow2(int n)
 {

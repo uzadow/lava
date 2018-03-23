@@ -169,7 +169,7 @@ float Bitmap::getAvg() const
 
     float sum = 0;
     uint8_t * pSrc = m_pPlanes[0];
-    int componentsPerPixel;
+    int componentsPerPixel = 0;
     for (int y = 0; y < getSize().y; ++y) {
         switch(m_PF) {
             case R8G8B8X8:
@@ -284,11 +284,11 @@ void Bitmap::dump(bool bDumpPixels) const
     cerr << "Bitmap: " << endl;
     cerr << "  m_Size: " << m_Size.x << "x" << m_Size.y << endl;
     cerr << "  m_PF: " << getPixelFormatString(m_PF) << endl;
-    cerr << "  m_Strides: " << m_Strides << endl;
-    cerr << "  m_pPlanes: " << m_pPlanes << endl;
     cerr << "  Pixel data: " << endl;
     for (unsigned p=0; p<m_pPlanes.size(); ++p) {
-        cerr << "    Plane " << p << endl;
+        cerr << "    m_pPlanes[" << p << "]:" << m_pPlanes[p] << endl;
+        cerr << "      stride:" << m_Strides[p] << endl;
+
 
         ivec2 max;
         if (bDumpPixels) {
@@ -319,44 +319,25 @@ void Bitmap::dump(bool bDumpPixels) const
             }
             cerr << endl;
         }
+    }
     cerr << dec;
 }
 
 int Bitmap::getPreferredStride(int width, PixelFormat pf)
 {
-    return (((width*avg::getBytesPerPixel(pf))-1)/4+1)*4;
+    return (((width*lava::getBytesPerPixel(pf))-1)/4+1)*4;
 }
 
 void Bitmap::initWithData(const uint8_t* pBits, int stride)
 {
-//    cerr << "Bitmap::initWithData()" << endl;
-    if (m_PF == YCbCr422) {
-        if (m_Size.x%2 == 1) {
-            AVG_LOG_WARNING("Odd size for YCbCr bitmap.");
-            m_Size.x++;
-        }
-        if (m_Size.y%2 == 1) {
-            AVG_LOG_WARNING("Odd size for YCbCr bitmap.");
-            m_Size.y++;
-        }
-        if (m_Size.x%2 == 1 || m_Size.y%2 == 1) {
-            AVG_LOG_ERROR("Odd size for YCbCr bitmap.");
-        }
-    }
-    if (bCopyBits) {
-        allocBits();
-        if (m_Stride == stride && stride == (m_Size.x*getBytesPerPixel())) {
-            memcpy(m_pBits, pBits, stride*m_Size.y);
-        } else {
-            for (int y = 0; y < m_Size.y; ++y) {
-                memcpy(m_pBits+m_Stride*y, pBits+stride*y, m_Stride);
-            }
-        }
-        m_bOwnsBits = true;
+    checkValidSize();
+    allocBits();
+    if (m_Strides[0] == stride && stride == (m_Size.x*getBytesPerPixel())) {
+        memcpy(m_pPlanes[0], pBits, stride*m_Size.y);
     } else {
-        m_pBits = pBits;
-        m_Stride = stride;
-        m_bOwnsBits = false;
+        for (int y = 0; y < m_Size.y; ++y) {
+            memcpy(m_pPlanes[0]+m_Strides[0]*y, pBits+stride*y, m_Strides[0]);
+        }
     }
 }
 
@@ -365,31 +346,37 @@ void Bitmap::allocBits()
     LAVA_ASSERT(m_pPlanes.empty());
     LAVA_ASSERT(m_Size.x > 0 && m_Size.y > 0);
     checkValidSize();
-    m_Stride = getPreferredStride(m_Size.x, m_PF);
     if (pixelFormatIsPlanar(m_PF)) {
         LAVA_ASSERT(m_PF == YCbCr420p || m_PF == YCbCrJ420p || m_PF == YCbCrA420p);
 
         // Y Plane
-        pBits = new uint8_t[size_t(m_Stride)*m_Size.y];
+        int stride = getPreferredStride(m_Size.x, m_PF);
+        auto pBits = new uint8_t[size_t(stride)*m_Size.y];
         m_pPlanes.push_back(pBits);
+        m_Strides.push_back(stride);
 
         // U, V Planes
         ivec2 uvSize = m_Size/2;
-        for (i=0; i<2; ++i) {
-            pBits = new uint8_t[size_t(m_Stride)*uvSize.y];
+        stride = getPreferredStride(uvSize.x, m_PF);
+        for (int i=0; i<2; ++i) {
+            pBits = new uint8_t[size_t(stride)*uvSize.y];  
             m_pPlanes.push_back(pBits);
+            m_Strides.push_back(stride);
         }
 
         // A Plane
         if (m_PF == YCbCrA420p) {
-            pBits = new uint8_t[size_t(m_Stride)*m_Size.y];
+            stride = getPreferredStride(m_Size.x, m_PF);
+            pBits = new uint8_t[size_t(stride)*m_Size.y];
             m_pPlanes.push_back(pBits);
-
+            m_Strides.push_back(stride);
         }
     } else {
         // Non-planar case
-        pBits = new uint8_t[size_t(m_Stride)*m_Size.y];
+        int stride = getPreferredStride(m_Size.x, m_PF);
+        auto pBits = new uint8_t[size_t(stride)*m_Size.y];
         m_pPlanes.push_back(pBits);
+        m_Strides.push_back(stride);
     }
 }
 

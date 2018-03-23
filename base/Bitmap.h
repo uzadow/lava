@@ -25,9 +25,6 @@ public:
     Bitmap(glm::ivec2 size, PixelFormat pf, const std::vector<uint8_t*>& pPlanes, 
             const std::vector<int>& strides);
     Bitmap(const Bitmap& origBmp);
-    // TODO: Move to BmpView class
-//    Bitmap(const Bitmap& origBmp, bool bOwnsBits);
-//    Bitmap(Bitmap& origBmp, const IntRect& rect);
     virtual ~Bitmap();
 
     void load(const std::string& sName);

@@ -21,6 +21,9 @@
 
 #include "PixelFormat.h"
 
+#include "Exception.h"
+#include "StringHelper.h"
+
 #include <ostream>
 
 using namespace std;
@@ -66,8 +69,6 @@ string getPixelFormatString(PixelFormat pf)
             return "I16";
         case YCbCr422:
             return "YCbCr422";
-        case YUYV422:
-            return "YUYV422";
         case YCbCr420p:
             return "YCbCr420p";
         case YCbCrJ420p:
@@ -113,7 +114,7 @@ bool pixelFormatIsPlanar(PixelFormat pf)
     return pf == YCbCr420p || pf == YCbCrJ420p || pf == YCbCrA420p;
 }
 
-bool AVG_API pixelFormatIsBlueFirst(PixelFormat pf)
+bool pixelFormatIsBlueFirst(PixelFormat pf)
 {
     return pf == B5G6R5 || pf == B8G8R8 || pf == B8G8R8X8 || pf == B8G8R8A8;
 }
@@ -148,7 +149,6 @@ unsigned getBytesPerPixel(PixelFormat pf)
             return 4;
         case R8G8B8:
         case B8G8R8:
-        case JPEG:
             return 3;
         case B5G6R5:
         case R5G6B5:
