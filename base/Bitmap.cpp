@@ -40,7 +40,7 @@ Bitmap::Bitmap(ivec2 size, PixelFormat pf, const vector<uint8_t*>& pPlanes,
 Bitmap::Bitmap(const Bitmap& origBmp)
     : Bitmap(origBmp.getSize(), origBmp.getPixelFormat())
 {
-    initWithData(origBmp.getPlanes(), origBmp.getStrides());
+    initWithData(origBmp.m_pPlanes, origBmp.m_Strides);
 }
 
 Bitmap::~Bitmap()
@@ -284,17 +284,16 @@ void Bitmap::dump(bool bDumpPixels) const
         cerr << "      stride:" << m_Strides[p] << endl;
 
 
-        ivec2 max;
-        if (bDumpPixels) {
-            max = getPlaneSize(p);
-        } else {
-            max = ivec2(16,1);
+        ivec2 dumpSize;
+        dumpSize = getPlaneSize(p);
+        if (!bDumpPixels) {
+            dumpSize = ivec2(glm::min(dumpSize[0],16), 1);
         }
 
-        for (int y = 0; y < max.y; ++y) {
+        for (int y = 0; y < dumpSize.y; ++y) {
             uint8_t * pLine = m_pPlanes[p]+m_Strides[p]*y;
             cerr << "      ";
-            for (int x = 0; x < max.x; ++x) {
+            for (int x = 0; x < dumpSize.x; ++x) {
                 if (m_PF == R32G32B32A32F) {
                     float * pPixel = (float*)(pLine+getBytesPerPixel()*x);
                     cerr << "[";
@@ -324,14 +323,27 @@ int Bitmap::getPreferredStride(int width, PixelFormat pf)
 
 void Bitmap::initWithData(const uint8_t* pBits, int stride)
 {
-    if (m_Strides[0] == stride && stride == (m_Size.x*getBytesPerPixel())) {
-        memcpy(m_pPlanes[0], pBits, stride*m_Size.y);
+    initPlaneWithData(0, pBits, stride);
+}
+
+void Bitmap::initWithData(const std::vector<uint8_t *>& pPlanes, const std::vector<int>& strides)
+{
+    for (unsigned i=0; i<m_pPlanes.size(); ++i) {
+        initPlaneWithData(i, pPlanes[0], strides[0]);
+    }
+}
+
+void Bitmap::initPlaneWithData(unsigned i, const uint8_t* pBits, int stride)
+{
+    if (m_Strides[i] == stride && stride == (m_Size.x*getBytesPerPixel())) {
+        memcpy(m_pPlanes[i], pBits, stride*m_Size.y);
     } else {
         for (int y = 0; y < m_Size.y; ++y) {
-            memcpy(m_pPlanes[0]+m_Strides[0]*y, pBits+stride*y, m_Strides[0]);
+            memcpy(m_pPlanes[i]+m_Strides[i]*y, pBits+stride*y, m_Strides[i]);
         }
     }
 }
+
 
 void Bitmap::allocBits()
 {
@@ -387,5 +399,5 @@ void Bitmap::checkValidSize() const
             break;
     }
 }
-
+    
 };

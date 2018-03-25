@@ -53,11 +53,9 @@ public:
 private:
     void initWithData(const uint8_t* pBits, int stride);
     void initWithData(const std::vector<uint8_t *>& pPlanes, const std::vector<int>& strides);
+    void initPlaneWithData(unsigned i, const uint8_t* pBits, int stride);
     void allocBits();
     void checkValidSize() const;
-
-    const std::vector<int>& getStrides() const;
-    const std::vector<uint8_t*>& getPlanes() const;
 
     glm::ivec2 m_Size;
     PixelFormat m_PF;

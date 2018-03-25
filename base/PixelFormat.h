@@ -12,9 +12,9 @@ typedef enum {
     R5G6B5, R8G8B8, R8G8B8A8, R8G8B8X8, A8R8G8B8, X8R8G8B8,
     I8, I16,
     YCbCr422,  
-    YCbCr420p, 
-    YCbCrJ420p,
-    YCbCrA420p,
+    YCbCr420p,   // Planar YCbCr, 420 subsampling, MPEG color ranges
+    YCbCrJ420p,  // Planar YCbCr, 420 subsampling, JPEG color ranges
+    YCbCrA420p,  // Planar YCbCr + alpha, 420 subsampling, MPEG color ranges
     R32G32B32A32F, // 32bit per channel float rgba
     I32F,
     NO_PIXELFORMAT
