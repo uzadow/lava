@@ -5,7 +5,6 @@
 
 #include <cstring>
 #include <iostream>
-//#include <iomanip>
 #include <stdlib.h>
 
 using namespace std;
@@ -21,30 +20,25 @@ Bitmap::Bitmap(vec2 size, PixelFormat pf)
 }
 
 Bitmap::Bitmap(ivec2 size, PixelFormat pf)
-    : m_Size(size),
-      m_PF(pf)
+    : Bitmap(vec2(size), pf)
 {
-    allocBits();
 }
 
 Bitmap::Bitmap(ivec2 size, PixelFormat pf, uint8_t* pBits, int stride)
-    : m_Size(size),
-      m_PF(pf)
+    : Bitmap(size, pf)
 {
     initWithData(pBits, stride);
 }
 
 Bitmap::Bitmap(ivec2 size, PixelFormat pf, const vector<uint8_t*>& pPlanes,
         const std::vector<int>& strides)
-    : m_Size(size),
-      m_PF(pf)
+    : Bitmap(size, pf)
 {
     initWithData(pPlanes, strides);
 }
 
 Bitmap::Bitmap(const Bitmap& origBmp)
-    : m_Size(origBmp.getSize()),
-      m_PF(origBmp.getPixelFormat())
+    : Bitmap(origBmp.getSize(), origBmp.getPixelFormat())
 {
     initWithData(origBmp.getPlanes(), origBmp.getStrides());
 }
@@ -224,7 +218,7 @@ float Bitmap::getStdDev() const
     float sum = 0;
 
     uint8_t * pSrc = m_pPlanes[0];
-    int componentsPerPixel;
+    int componentsPerPixel = 0;
     for (int y = 0; y < getSize().y; ++y) {
         switch(m_PF) {
             case R8G8B8X8:
@@ -330,8 +324,6 @@ int Bitmap::getPreferredStride(int width, PixelFormat pf)
 
 void Bitmap::initWithData(const uint8_t* pBits, int stride)
 {
-    checkValidSize();
-    allocBits();
     if (m_Strides[0] == stride && stride == (m_Size.x*getBytesPerPixel())) {
         memcpy(m_pPlanes[0], pBits, stride*m_Size.y);
     } else {
