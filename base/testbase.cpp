@@ -19,13 +19,34 @@ public:
 
     void runTests()
     {
-        initBmp(I8);
+        checkI8();
         initBmp(R8G8B8);
         initBmp(R8G8B8A8);
-        TEST(true);
     }
 
 private:
+    void checkI8()
+    {
+        // Basic sanity check
+        BitmapPtr pBmp = initBmp(I8);
+        checkSanity(pBmp, I8, glm::ivec2(5,7), 5);
+        uint8_t* pBits = pBmp->getPixels(0);
+        unsigned stride = pBmp->getStride(0);
+        TEST(pBits[0] == 0);
+        TEST(pBits[6*stride+4] == 4);
+
+        // Test copy
+        BitmapPtr pBmpCopy(new Bitmap(*pBmp));
+        checkSanity(pBmpCopy, I8, glm::ivec2(5,7), 5);
+        pBits = pBmpCopy->getPixels(0);
+        stride = pBmpCopy->getStride(0);
+        TEST(pBits[0] == 0);
+        TEST(pBits[6*stride+4] == 4);
+
+        TEST(*pBmp == *pBmpCopy);
+        
+    }
+
     BitmapPtr initBmp(PixelFormat pf)
     {
         LAVA_ASSERT(!pixelFormatIsPlanar(pf));
@@ -60,10 +81,17 @@ private:
                 }
             }
         }
-        pBmp->dump(true);
+//        pBmp->dump(true);
         return pBmp;
     }
-    
+
+    void checkSanity(BitmapPtr pBmp, PixelFormat pf, const glm::ivec2& size, int minStride)
+    {
+        TEST(pBmp->getSize() == size);
+        TEST(pBmp->getPixelFormat() == pf);
+        TEST(pBmp->getStride(0) >= minStride);
+    }
+
 };
 
 class BaseTestSuite: public TestSuite
