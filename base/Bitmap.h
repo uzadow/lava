@@ -22,14 +22,14 @@ public:
     Bitmap(glm::vec2 size, PixelFormat pf);
     Bitmap(glm::ivec2 size, PixelFormat pf);
     Bitmap(glm::ivec2 size, PixelFormat pf, uint8_t* pBits, int stride);
-    Bitmap(glm::ivec2 size, PixelFormat pf, const std::vector<uint8_t*>& pPlanes, 
+    Bitmap(glm::ivec2 size, PixelFormat pf, const std::vector<uint8_t*>& pPlanes,
             const std::vector<int>& strides);
     Bitmap(const Bitmap& origBmp);
     virtual ~Bitmap();
 
     void load(const std::string& sName);
     void save(const std::string& sName) const;
-    
+
     glm::ivec2 getSize() const;
     glm::ivec2 getPlaneSize(unsigned i) const;
     int getStride(unsigned i) const;
@@ -41,7 +41,7 @@ public:
     int getMemNeeded() const;
 
     // TODO: operator -
-    // BitmapPtr subtract(const Bitmap& pOtherBmp);
+    BitmapPtr subtract(const Bitmap& otherBmp);
     float getAvg() const;
     float getStdDev() const;
 
@@ -60,7 +60,7 @@ private:
     glm::ivec2 m_Size;
     PixelFormat m_PF;
     std::vector<int> m_Strides;
-    std::vector<uint8_t*> m_pPlanes; 
+    std::vector<uint8_t*> m_pPlanes;
 };
 
 }

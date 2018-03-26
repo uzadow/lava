@@ -45,6 +45,14 @@ private:
 
         TEST(*pBmp == *pBmpCopy);
         
+        BitmapPtr pDiffBmp = pBmp->subtract(*pBmpCopy);
+        checkSanity(pDiffBmp, I8, glm::ivec2(5,7), 5);
+        pBits = pDiffBmp->getPixels(0);
+        stride = pDiffBmp->getStride(0);
+        TEST(pBits[0] == 0);
+        TEST(pBits[6*stride+4] == 0);
+        TEST(pDiffBmp->getAvg() == 0);
+        TEST(pDiffBmp->getStdDev() == 0);
     }
 
     BitmapPtr initBmp(PixelFormat pf)

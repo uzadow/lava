@@ -64,11 +64,11 @@ ivec2 Bitmap::getSize() const
 {
     return m_Size;
 }
-    
+
 ivec2 Bitmap::getPlaneSize(unsigned i) const
 {
     LAVA_ASSERT(i < m_pPlanes.size());
-    // We're assuming all planar bitmaps are YCbCr420 or YCbCrA420 
+    // We're assuming all planar bitmaps are YCbCr420 or YCbCrA420
     if (i == 0 || i == 3) {
         return m_Size;
     } else {
@@ -136,9 +136,9 @@ bool Bitmap::operator ==(const Bitmap& otherBmp)
                     for (int x = 0; x < size.x; ++x) {
                         const uint8_t * pSrcPixel = pSrc+x*getBytesPerPixel();
                         uint8_t * pDestPixel = pDest+x*getBytesPerPixel();
-                        if (*pDestPixel != *pSrcPixel && 
+                        if (*pDestPixel != *pSrcPixel &&
                                 *(pDestPixel+1) != *(pSrcPixel+1) &&
-                                *(pDestPixel+2) != *(pSrcPixel+2) ) 
+                                *(pDestPixel+2) != *(pSrcPixel+2) )
                         {
                             return false;
                         }
@@ -156,6 +156,39 @@ bool Bitmap::operator ==(const Bitmap& otherBmp)
     return true;
 }
 
+BitmapPtr Bitmap::subtract(const Bitmap& otherBmp)
+{
+    BitmapPtr pResultBmp(new Bitmap(m_Size, m_PF));
+
+    for (unsigned i=0; i<m_pPlanes.size(); ++i) {
+
+        const uint8_t* pBits0 = m_pPlanes[i];
+        int stride0 = m_Strides[i];
+
+        const uint8_t* pBits1 = otherBmp.getPixels(i);
+        int stride1 = otherBmp.getStride(i);
+
+        uint8_t* pResultBits = pResultBmp->getPixels(i);
+        int resultStride = pResultBmp->getStride(i);
+
+        for (int y=0; y<getSize().y; ++y) {
+            const uint8_t * pSrcBits0 = pBits0;
+            const uint8_t * pSrcBits1 = pBits1;
+            uint8_t * pDestBits = pResultBits;
+
+            for (int x=0; x<m_Size.x*getBytesPerPixel(); ++x) {
+                *pDestBits = *pSrcBits0 - *pSrcBits1;
+                pSrcBits0++;
+                pSrcBits1++;
+                pDestBits++;
+            }
+            pBits0 += stride0;
+            pBits1 += stride1;
+            pResultBits += resultStride;
+        }
+    }
+    return pResultBmp;
+}
 
 float Bitmap::getAvg() const
 {
@@ -164,13 +197,13 @@ float Bitmap::getAvg() const
     float sum = 0;
     uint8_t * pSrc = m_pPlanes[0];
     int componentsPerPixel = 0;
-    for (int y = 0; y < getSize().y; ++y) {
+    for (int y=0; y<getSize().y; ++y) {
         switch(m_PF) {
             case R8G8B8X8:
             case B8G8R8X8:
                 {
                     uint8_t * pSrcPixel = pSrc;
-                    for (int x = 0; x < m_Size.x; ++x) {
+                    for (int x=0; x<m_Size.x; ++x) {
                         sum += pSrcPixel[0] + pSrcPixel[1] + pSrcPixel[2];
                         pSrcPixel+=4;
                     }
@@ -181,7 +214,7 @@ float Bitmap::getAvg() const
             case B8G8R8A8:
                 {
                     uint8_t * pSrcPixel = pSrc;
-                    for (int x = 0; x < m_Size.x; ++x) {
+                    for (int x=0; x<m_Size.x; ++x) {
                         int alpha = pSrcPixel[3];
                         sum += ((pSrcPixel[0] + pSrcPixel[1] + pSrcPixel[2])*alpha)/255 + alpha;
                         pSrcPixel+=4;
@@ -189,15 +222,10 @@ float Bitmap::getAvg() const
                     componentsPerPixel = 4;
                 }
                 break;
-            case I16:
-            case R32G32B32A32F:
-            case I32F:
-                LAVA_ASSERT(false);
-                break;
             default:
                 {
                     uint8_t * pSrcComponent = pSrc;
-                    for (int x = 0; x < getLineLen(); ++x) {
+                    for (int x=0; x<getLineLen(); ++x) {
                         sum += *pSrcComponent;
                         pSrcComponent++;
                     }
@@ -225,7 +253,7 @@ float Bitmap::getStdDev() const
             case B8G8R8X8:
                 {
                     uint8_t * pSrcPixel = pSrc;
-                    for (int x = 0; x < m_Size.x; ++x) {
+                    for (int x=0; x<m_Size.x; ++x) {
                         sum += sqr(pSrcPixel[0]-average);
                         sum += sqr(pSrcPixel[1]-average);
                         sum += sqr(pSrcPixel[2]-average);
@@ -238,7 +266,7 @@ float Bitmap::getStdDev() const
             case B8G8R8A8:
                 {
                     uint8_t * pSrcPixel = pSrc;
-                    for (int x = 0; x < m_Size.x; ++x) {
+                    for (int x=0; x<m_Size.x; ++x) {
                         int alpha = pSrcPixel[3];
                         if (alpha > 0) {
                             sum += sqr(pSrcPixel[0]-average);
@@ -251,15 +279,10 @@ float Bitmap::getStdDev() const
                     componentsPerPixel = 4;
                 }
                 break;
-            case I16:
-            case R32G32B32A32F:
-            case I32F:
-                LAVA_ASSERT(false);
-                break;
             default:
                 {
                     uint8_t * pSrcComponent = pSrc;
-                    for (int x = 0; x < getLineLen(); ++x) {
+                    for (int x=0; x<getLineLen(); ++x) {
                         sum += sqr(*pSrcComponent-average);
                         pSrcComponent++;
                     }
@@ -294,21 +317,12 @@ void Bitmap::dump(bool bDumpPixels) const
             uint8_t * pLine = m_pPlanes[p]+m_Strides[p]*y;
             cerr << "      ";
             for (int x = 0; x < dumpSize.x; ++x) {
-                if (m_PF == R32G32B32A32F) {
-                    float * pPixel = (float*)(pLine+getBytesPerPixel()*x);
-                    cerr << "[";
-                    for (int i = 0; i < 4; ++i) {
-                        cerr << setw(4) << setprecision(2) << pPixel[i] << " ";
-                    }
-                    cerr << "]";
-                } else {
-                    uint8_t * pPixel = pLine+getBytesPerPixel()*x;
-                    cerr << "[";
-                    for (int i = 0; i < getBytesPerPixel(); ++i) {
-                        cerr << hex << setw(2) << (int)(pPixel[i]) << " ";
-                    }
-                    cerr << "]";
+                uint8_t * pPixel = pLine+getBytesPerPixel()*x;
+                cerr << "[";
+                for (int i = 0; i < getBytesPerPixel(); ++i) {
+                    cerr << hex << setw(2) << (int)(pPixel[i]) << " ";
                 }
+                cerr << "]";
             }
             cerr << endl;
         }
@@ -363,7 +377,7 @@ void Bitmap::allocBits()
         ivec2 uvSize = m_Size/2;
         stride = getPreferredStride(uvSize.x, m_PF);
         for (int i=0; i<2; ++i) {
-            pBits = new uint8_t[size_t(stride)*uvSize.y];  
+            pBits = new uint8_t[size_t(stride)*uvSize.y];
             m_pPlanes.push_back(pBits);
             m_Strides.push_back(stride);
         }
@@ -399,5 +413,5 @@ void Bitmap::checkValidSize() const
             break;
     }
 }
-    
+
 };

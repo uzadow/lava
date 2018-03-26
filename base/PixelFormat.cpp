@@ -65,8 +65,6 @@ string getPixelFormatString(PixelFormat pf)
             return "X8R8G8B8";
         case I8:
             return "I8";
-        case I16:
-            return "I16";
         case YCbCr422:
             return "YCbCr422";
         case YCbCr420p:
@@ -75,10 +73,6 @@ string getPixelFormatString(PixelFormat pf)
             return "YCbCrJ420p";
         case YCbCrA420p:
             return "YCbCrA420p";
-        case R32G32B32A32F:
-            return "R32G32B32A32F";
-        case I32F:
-            return "I32F";
         case NO_PIXELFORMAT:
             return "NO_PIXELFORMAT";
         default:
@@ -100,7 +94,7 @@ std::vector<std::string> getSupportedPixelFormats()
 
 bool pixelFormatIsColored(PixelFormat pf)
 {
-    return (pf != I8 && pf != I16 && pf != I32F);
+    return (pf != I8);
 }
 
 bool pixelFormatHasAlpha(PixelFormat pf)
@@ -135,8 +129,6 @@ unsigned getNumPixelFormatPlanes(PixelFormat pf)
 unsigned getBytesPerPixel(PixelFormat pf)
 {
     switch (pf) {
-        case R32G32B32A32F:
-            return 16;
         case A8B8G8R8:
         case X8B8G8R8:
         case A8R8G8B8:
@@ -145,16 +137,17 @@ unsigned getBytesPerPixel(PixelFormat pf)
         case B8G8R8X8:
         case R8G8B8A8:
         case R8G8B8X8:
-        case I32F:
             return 4;
         case R8G8B8:
         case B8G8R8:
             return 3;
         case B5G6R5:
         case R5G6B5:
-        case I16:
             return 2;
         case I8:
+        case YCbCr420p:
+        case YCbCrJ420p:
+        case YCbCrA420p:
             return 1;
         case YCbCr422:
             return 2;
