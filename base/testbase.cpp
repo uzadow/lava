@@ -19,27 +19,28 @@ public:
 
     void runTests()
     {
-        checkOnePF(I8, 0, 4);
-        checkOnePF(R8G8B8, 0, 4*16);
-        checkOnePF(R8G8B8A8, 0, 0x80);
+        checkOnePF(I8, glm::ivec2(5,7), 0, 4);
+        checkOnePF(R8G8B8, glm::ivec2(5,7), 0, 4*16);
+        checkOnePF(R8G8B8A8, glm::ivec2(5,7), 0, 0x80);
+        checkOnePF(YCbCr420p, glm::ivec2(6,8), 0, 5);
     }
 
 private:
-    void checkOnePF(PixelFormat pf, uint8_t firstByte, uint8_t lastByte)
+    void checkOnePF(PixelFormat pf, const glm::ivec2& size, uint8_t firstByte, uint8_t lastByte)
     {
-        TEST_MSG(getPixelFormatString(pf));
+        TEST_MSG(pf);
         // Basic sanity check
         BitmapPtr pBmp = initBmp(pf);
-        checkSanity(pBmp, pf, glm::ivec2(5,7), 5, firstByte, lastByte);
+        checkSanity(pBmp, pf, size, 5, firstByte, lastByte);
 
         // Copy, equals
         BitmapPtr pBmpCopy(new Bitmap(*pBmp));
-        checkSanity(pBmpCopy, pf, glm::ivec2(5,7), 5, firstByte, lastByte);
+        checkSanity(pBmpCopy, pf, size, 5, firstByte, lastByte);
         TEST(*pBmp == *pBmpCopy);
 
         // Subtract, avg, stdev
         BitmapPtr pDiffBmp = pBmp->subtract(*pBmpCopy);
-        checkSanity(pDiffBmp, pf, glm::ivec2(5,7), 5, 0, 0);
+        checkSanity(pDiffBmp, pf, size, 5, 0, 0);
         TEST(pDiffBmp->getAvg() == 0);
         TEST(pDiffBmp->getStdev() == 0);
     }
@@ -61,7 +62,6 @@ private:
 
     BitmapPtr initBmp(PixelFormat pf)
     {
-        LAVA_ASSERT(!pixelFormatIsPlanar(pf));
         glm::ivec2 size;
         switch(pf) {
             case YCbCr422:
@@ -77,23 +77,25 @@ private:
         }
         BitmapPtr pBmp(new Bitmap(size, pf));
         int bpp = pBmp->getBytesPerPixel();
-        for (int y = 0; y < size[1]; ++y) {
-            for (int x = 0; x < size[0]; ++x) {
-                unsigned char * pPixel = pBmp->getPixels(0)+y*pBmp->getStride(0)+x*pBmp->getBytesPerPixel();
-                *(pPixel) = x;
-                if (bpp > 1) {
-                    *(pPixel+1) = 0;
-                }
-                if (bpp > 2) {
-                    *(pPixel+2) = x*16;
-                    *(pPixel+1) = 16*y;
-                }
-                if (bpp > 3) {
-                    *(pPixel+3) = 0x80;
+        for (unsigned p = 0; p < getNumPixelFormatPlanes(pf); ++p) {
+            glm::ivec2 planeSize = pBmp->getPlaneSize(p);
+            for (int y = 0; y < planeSize.y; ++y) {
+                for (int x = 0; x < planeSize.x; ++x) {
+                    unsigned char * pPixel = pBmp->getPixels(p) + y*pBmp->getStride(p) + x*pBmp->getBytesPerPixel();
+                    *(pPixel) = x;
+                    if (bpp > 1) {
+                        *(pPixel+1) = 0;
+                    }
+                    if (bpp > 2) {
+                        *(pPixel+2) = x*16;
+                        *(pPixel+1) = 16*y;
+                    }
+                    if (bpp > 3) {
+                        *(pPixel+3) = 0x80;
+                    }
                 }
             }
         }
-//        pBmp->dump(true);
         return pBmp;
     }
 };

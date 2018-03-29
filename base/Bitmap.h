@@ -37,7 +37,7 @@ public:
     uint8_t* getPixels(unsigned i);
     const uint8_t* getPixels(unsigned i) const;
     int getBytesPerPixel() const;
-    int getLineLen() const;
+    int getLineLen(unsigned i) const;
     int getMemNeeded() const;
 
     // TODO: operator -
