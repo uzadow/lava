@@ -238,7 +238,7 @@ float Bitmap::getAvg() const
     return sum/(m_Size.x*m_Size.y);
 }
 
-float Bitmap::getStdDev() const
+float Bitmap::getStdev() const
 {
     LAVA_ASSERT(!pixelFormatIsPlanar(m_PF));
 

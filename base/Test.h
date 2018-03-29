@@ -59,5 +59,8 @@ typedef std::shared_ptr<Test> TestPtr;
         cerr << string(getIndentLevel()+4, ' ') << "  TEST(" << #b << ")" << endl;  \
     }                                      \
     test(b, __FILE__, __LINE__);
+
+#define TEST_MSG(msg)                            \
+    cerr << string(getIndentLevel()+2, ' ') << msg << endl;
 }
 

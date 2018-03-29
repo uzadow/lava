@@ -19,40 +19,44 @@ public:
 
     void runTests()
     {
-        checkI8();
-        initBmp(R8G8B8);
-        initBmp(R8G8B8A8);
+        checkOnePF(I8, 0, 4);
+        checkOnePF(R8G8B8, 0, 4*16);
+        checkOnePF(R8G8B8A8, 0, 0x80);
     }
 
 private:
-    void checkI8()
+    void checkOnePF(PixelFormat pf, uint8_t firstByte, uint8_t lastByte)
     {
+        TEST_MSG(getPixelFormatString(pf));
         // Basic sanity check
-        BitmapPtr pBmp = initBmp(I8);
-        checkSanity(pBmp, I8, glm::ivec2(5,7), 5);
-        uint8_t* pBits = pBmp->getPixels(0);
-        unsigned stride = pBmp->getStride(0);
-        TEST(pBits[0] == 0);
-        TEST(pBits[6*stride+4] == 4);
+        BitmapPtr pBmp = initBmp(pf);
+        checkSanity(pBmp, pf, glm::ivec2(5,7), 5, firstByte, lastByte);
 
-        // Test copy
+        // Copy, equals
         BitmapPtr pBmpCopy(new Bitmap(*pBmp));
-        checkSanity(pBmpCopy, I8, glm::ivec2(5,7), 5);
-        pBits = pBmpCopy->getPixels(0);
-        stride = pBmpCopy->getStride(0);
-        TEST(pBits[0] == 0);
-        TEST(pBits[6*stride+4] == 4);
-
+        checkSanity(pBmpCopy, pf, glm::ivec2(5,7), 5, firstByte, lastByte);
         TEST(*pBmp == *pBmpCopy);
-        
+
+        // Subtract, avg, stdev
         BitmapPtr pDiffBmp = pBmp->subtract(*pBmpCopy);
-        checkSanity(pDiffBmp, I8, glm::ivec2(5,7), 5);
-        pBits = pDiffBmp->getPixels(0);
-        stride = pDiffBmp->getStride(0);
-        TEST(pBits[0] == 0);
-        TEST(pBits[6*stride+4] == 0);
+        checkSanity(pDiffBmp, pf, glm::ivec2(5,7), 5, 0, 0);
         TEST(pDiffBmp->getAvg() == 0);
-        TEST(pDiffBmp->getStdDev() == 0);
+        TEST(pDiffBmp->getStdev() == 0);
+    }
+
+    void checkSanity(BitmapPtr pBmp, PixelFormat pf, const glm::ivec2& size, int minStride,
+            uint8_t firstByte, uint8_t lastByte)
+    {
+        TEST(pBmp->getSize() == size);
+        TEST(pBmp->getPixelFormat() == pf);
+        uint8_t* pBits = pBmp->getPixels(0);
+        int stride = pBmp->getStride(0);
+        TEST(stride >= minStride);
+
+        TEST(pBits[0] == firstByte);
+        uint8_t bpp = getBytesPerPixel(pf);
+        unsigned offset = (size.y-1)*stride + (size.x)*bpp - 1;
+        TEST(pBits[offset] == lastByte);
     }
 
     BitmapPtr initBmp(PixelFormat pf)
@@ -92,20 +96,12 @@ private:
 //        pBmp->dump(true);
         return pBmp;
     }
-
-    void checkSanity(BitmapPtr pBmp, PixelFormat pf, const glm::ivec2& size, int minStride)
-    {
-        TEST(pBmp->getSize() == size);
-        TEST(pBmp->getPixelFormat() == pf);
-        TEST(pBmp->getStride(0) >= minStride);
-    }
-
 };
 
 class BaseTestSuite: public TestSuite
 {
 public:
-    BaseTestSuite() 
+    BaseTestSuite()
         : TestSuite("BaseTestSuite")
     {
         addTest(TestPtr(new BmpTest));

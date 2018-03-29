@@ -43,7 +43,7 @@ public:
     // TODO: operator -
     BitmapPtr subtract(const Bitmap& otherBmp);
     float getAvg() const;
-    float getStdDev() const;
+    float getStdev() const;
 
     bool operator ==(const Bitmap& otherBmp);
     void dump(bool bDumpPixels=false) const;
