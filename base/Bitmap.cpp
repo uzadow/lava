@@ -14,6 +14,10 @@ using namespace glm;
 
 namespace lava {
 
+float Bitmap::s_MaxAvgDiff = 0.5;
+float Bitmap::s_MaxStdevDiff = 2;
+
+
 Bitmap::Bitmap(vec2 size, PixelFormat pf)
     : m_Size(size),
       m_PF(pf)
@@ -446,6 +450,29 @@ void Bitmap::checkValidSize() const
         default:
             break;
     }
+}
+
+void Bitmap::setEpsilon(float maxAvgDiff, float maxStdevDiff)
+{
+    s_MaxAvgDiff = maxAvgDiff;
+    s_MaxStdevDiff = maxStdevDiff;
+}
+
+bool Bitmap::almostEqual(const Bitmap& bmp1, const Bitmap& bmp2)
+{
+    if (bmp1.getSize() != bmp2.getSize()) {
+        return false;
+    }
+    if (bmp1.getPixelFormat() != bmp2.getPixelFormat()) {
+        return false;
+    }
+    if (fabs(bmp1.getAvg() - bmp2.getAvg()) > s_MaxAvgDiff) {
+        return false;
+    }
+    if (fabs(bmp1.getStdev() - bmp2.getStdev()) > s_MaxStdevDiff) {
+        return false;
+    }
+    return true;
 }
 
 };

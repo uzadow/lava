@@ -50,6 +50,9 @@ public:
 
     static int getPreferredStride(int width, PixelFormat pf);
 
+    static void setEpsilon(float maxAvgDiff, float maxStdevDiff);
+    static bool almostEqual(const Bitmap& bmp1, const Bitmap& bmp2);
+
 private:
     void initWithData(const uint8_t* pBits, int stride);
     void initWithData(const std::vector<uint8_t *>& pPlanes, const std::vector<int>& strides);
@@ -61,6 +64,9 @@ private:
     PixelFormat m_PF;
     std::vector<int> m_Strides;
     std::vector<uint8_t*> m_pPlanes;
+
+    static float s_MaxAvgDiff;
+    static float s_MaxStdevDiff;
 };
 
 }

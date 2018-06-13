@@ -21,13 +21,14 @@ public:
 
     void runTests()
     {
+        Bitmap::setEpsilon(0.5, 2);
+
         checkOnePF(I8, glm::ivec2(5,7), 0, 4);
         checkOnePF(R8G8B8, glm::ivec2(5,7), 0, 4*16);
         checkOnePF(R8G8B8A8, glm::ivec2(5,7), 0, 0x80);
         checkOnePF(YCbCr420p, glm::ivec2(6,8), 0, 5);
 
-        checkLoad("invaders.png");
-        checkLoad("invaders.jpg");
+        checkLoad();
     }
 
 private:
@@ -50,10 +51,14 @@ private:
         TEST(pDiffBmp->getStdev() == 0);
     }
 
-    void checkLoad(const string& sFilename)
+    void checkLoad()
     {
-        BitmapPtr pBmp(new Bitmap(Bitmap::load(sMediaDir + "/" + sFilename)));
+        TEST_MSG("Loader");
+        BitmapPtr pBmp1(new Bitmap(Bitmap::load(sMediaDir + "/invaders.png")));
+        BitmapPtr pBmp2(new Bitmap(Bitmap::load(sMediaDir + "/invaders.jpg")));
+        TEST(Bitmap::almostEqual(*pBmp1, *pBmp2));
 
+        TEST_EXCEPTION(Bitmap::load("FileDoesntExist.png"), Exception);
     }
 
     void checkSanity(const BitmapPtr& pBmp, PixelFormat pf, const glm::ivec2& size, int minStride,
