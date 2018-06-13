@@ -6,8 +6,10 @@
 #include "stb_image.h"
 
 #include <cstring>
-#include <iostream>
 #include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 using namespace glm;
@@ -16,7 +18,7 @@ namespace lava {
 
 float Bitmap::s_MaxAvgDiff = 0.5;
 float Bitmap::s_MaxStdevDiff = 2;
-
+tjhandle Bitmap::s_JPEGDecompressor = 0;
 
 Bitmap::Bitmap(vec2 size, PixelFormat pf)
     : m_Size(size),
@@ -60,27 +62,63 @@ Bitmap::~Bitmap()
 Bitmap Bitmap::load(const string& sFilename)
 {
     int w, h;
-    int numChannels;
-    PixelFormat pf;
-    uint8_t* pData = stbi_load(sFilename.c_str(), &w, &h, &numChannels, 0);
-    if (!pData) {
-        throw Exception("Error loading '"+sFilename+"': "+stbi_failure_reason());
+
+    if (!s_JPEGDecompressor) {
+        s_JPEGDecompressor = tjInitDecompress();
     }
-    switch(numChannels) {
-        case 1:
-            pf = I8;
-            break;
-        case 3:
-            pf = R8G8B8;
-            break;
-        case 4:
-            pf = R8G8B8A8;
-            break;
-        default:
-            pf = NO_PIXELFORMAT;
-            LAVA_ASSERT(false);
+
+    string sCompressedImg;
+    {
+        ifstream is(sFilename.c_str());
+        if (!is.good()) {
+            throw Exception("Error loading '" + sFilename + "': Could not open file.");
+        }
+        stringstream sstr;
+        sstr << is.rdbuf();
+        sCompressedImg = sstr.str();
     }
-    return Bitmap(ivec2(w, h), pf, pData, w*numChannels);
+
+    int subsamp;
+    int colorspace;
+    uint8_t* pCompressedImg = (uint8_t*)sCompressedImg.c_str();
+    int len = sCompressedImg.size();
+
+    int err = tjDecompressHeader3(s_JPEGDecompressor, pCompressedImg, len, &w, &h, &subsamp, &colorspace);
+    if (err == 0 && colorspace == TJCS_YCbCr && subsamp == TJSAMP_420) {
+        // This is a YUV 4:2:0 jpeg. Load without conversion to RGB for speed using TurboJPEG.
+        Bitmap bmp(ivec2(w, h), YCbCr420p);
+        uint8_t** pPlanes = bmp.m_pPlanes.data();
+        int* pStrides = bmp.m_Strides.data();
+        err = tjDecompressToYUVPlanes(s_JPEGDecompressor, pCompressedImg, len, pPlanes, w, pStrides, h, 0);
+        if (err == -1) {
+            throw Exception("Error loading '" + sFilename + "': " + tjGetErrorStr());
+        }
+        return bmp;
+    } else {
+        // Non-optimized decode for all other image formats.
+
+        int numChannels;
+        PixelFormat pf;
+        uint8_t* pData = stbi_load(sFilename.c_str(), &w, &h, &numChannels, 0);
+        if (!pData) {
+            throw Exception("Error loading '" + sFilename + "': " + stbi_failure_reason());
+        }
+        switch (numChannels) {
+            case 1:
+                pf = I8;
+                break;
+            case 3:
+                pf = R8G8B8;
+                break;
+            case 4:
+                pf = R8G8B8A8;
+                break;
+            default:
+                pf = NO_PIXELFORMAT;
+                LAVA_ASSERT(false);
+        }
+        return Bitmap(ivec2(w, h), pf, pData, w*numChannels);
+    }
 }
 
 void Bitmap::save(const string& sFilename) const
@@ -405,35 +443,27 @@ void Bitmap::allocBits()
     if (pixelFormatIsPlanar(m_PF)) {
         LAVA_ASSERT(m_PF == YCbCr420p || m_PF == YCbCrJ420p || m_PF == YCbCrA420p);
 
-        // Y Plane
-        int stride = getPreferredStride(m_Size.x, m_PF);
-        auto pBits = new uint8_t[size_t(stride)*m_Size.y];
-        m_pPlanes.push_back(pBits);
-        m_Strides.push_back(stride);
+        allocPlane(m_Size); // Y Plane
 
-        // U, V Planes
         ivec2 uvSize = m_Size/2;
-        stride = getPreferredStride(uvSize.x, m_PF);
-        for (int i=0; i<2; ++i) {
-            pBits = new uint8_t[size_t(stride)*uvSize.y];
-            m_pPlanes.push_back(pBits);
-            m_Strides.push_back(stride);
-        }
+        allocPlane(uvSize); // U,V Planes
+        allocPlane(uvSize);
 
-        // A Plane
         if (m_PF == YCbCrA420p) {
-            stride = getPreferredStride(m_Size.x, m_PF);
-            pBits = new uint8_t[size_t(stride)*m_Size.y];
-            m_pPlanes.push_back(pBits);
-            m_Strides.push_back(stride);
+            allocPlane(m_Size); // A Plane
         }
     } else {
         // Non-planar case
-        int stride = getPreferredStride(m_Size.x, m_PF);
-        auto pBits = new uint8_t[size_t(stride)*m_Size.y];
-        m_pPlanes.push_back(pBits);
-        m_Strides.push_back(stride);
+        allocPlane(m_Size);
     }
+}
+
+void Bitmap::allocPlane(const ivec2& size)
+{
+    int stride = getPreferredStride(size.x, m_PF);
+    auto pBits = new uint8_t[size_t(stride)*size.y];
+    m_pPlanes.push_back(pBits);
+    m_Strides.push_back(stride);
 }
 
 void Bitmap::checkValidSize() const

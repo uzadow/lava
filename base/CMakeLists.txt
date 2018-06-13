@@ -9,6 +9,9 @@ add_library(base
     Test.cpp 
     TestSuite.cpp stb_image.h)
 
+target_link_libraries(base
+        PUBLIC turbojpeg)
+
 link_libraries(base)
 add_executable(testbase testbase.cpp)
 

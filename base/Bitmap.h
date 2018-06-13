@@ -5,8 +5,9 @@
 #include "Rect.h"
 #include "GLMHelper.h"
 
-#include <boost/shared_ptr.hpp>
+#include <turbojpeg.h>
 
+#include <memory>
 #include <vector>
 #include <iostream>
 #include <string>
@@ -14,7 +15,7 @@
 namespace lava {
 
 class Bitmap;
-typedef boost::shared_ptr<Bitmap> BitmapPtr;
+typedef std::shared_ptr<Bitmap> BitmapPtr;
 
 class Bitmap
 {
@@ -59,6 +60,7 @@ private:
     void initWithData(const std::vector<uint8_t *>& pPlanes, const std::vector<int>& strides);
     void initPlaneWithData(unsigned i, const uint8_t* pBits, int stride);
     void allocBits();
+    void allocPlane(const glm::ivec2& size);
     void checkValidSize() const;
 
     glm::ivec2 m_Size;
@@ -68,6 +70,7 @@ private:
 
     static float s_MaxAvgDiff;
     static float s_MaxStdevDiff;
+    static tjhandle s_JPEGDecompressor;
 };
 
 }
