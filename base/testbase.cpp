@@ -3,9 +3,11 @@
 #include "Exception.h"
 #include "Bitmap.h"
 
-#include <stdio.h>
+#include <cstdio>
 
 using namespace std;
+
+const std::string sMediaDir = "../../testmedia";
 
 namespace lava {
 
@@ -23,6 +25,9 @@ public:
         checkOnePF(R8G8B8, glm::ivec2(5,7), 0, 4*16);
         checkOnePF(R8G8B8A8, glm::ivec2(5,7), 0, 0x80);
         checkOnePF(YCbCr420p, glm::ivec2(6,8), 0, 5);
+
+        checkLoad("invaders.png");
+        checkLoad("invaders.jpg");
     }
 
 private:
@@ -45,7 +50,13 @@ private:
         TEST(pDiffBmp->getStdev() == 0);
     }
 
-    void checkSanity(BitmapPtr pBmp, PixelFormat pf, const glm::ivec2& size, int minStride,
+    void checkLoad(const string& sFilename)
+    {
+        BitmapPtr pBmp(new Bitmap(Bitmap::load(sMediaDir + "/" + sFilename)));
+
+    }
+
+    void checkSanity(const BitmapPtr& pBmp, PixelFormat pf, const glm::ivec2& size, int minStride,
             uint8_t firstByte, uint8_t lastByte)
     {
         TEST(pBmp->getSize() == size);

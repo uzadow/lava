@@ -27,7 +27,7 @@ public:
     Bitmap(const Bitmap& origBmp);
     virtual ~Bitmap();
 
-    void load(const std::string& sName);
+    static Bitmap load(const std::string& sName);
     void save(const std::string& sName) const;
 
     glm::ivec2 getSize() const;

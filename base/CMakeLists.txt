@@ -7,7 +7,7 @@ add_library(base
     PixelFormat.cpp
     StringHelper.cpp
     Test.cpp 
-    TestSuite.cpp)
+    TestSuite.cpp stb_image.h)
 
 link_libraries(base)
 add_executable(testbase testbase.cpp)

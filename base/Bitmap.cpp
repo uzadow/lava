@@ -2,10 +2,12 @@
 
 #include "Exception.h"
 #include "MathHelper.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 #include <cstring>
 #include <iostream>
-#include <stdlib.h>
+#include <cstdlib>
 
 using namespace std;
 using namespace glm;
@@ -51,8 +53,30 @@ Bitmap::~Bitmap()
     m_pPlanes.clear();
 }
 
-void Bitmap::load(const string& sFilename)
+Bitmap Bitmap::load(const string& sFilename)
 {
+    int w, h;
+    int numChannels;
+    PixelFormat pf;
+    uint8_t* pData = stbi_load(sFilename.c_str(), &w, &h, &numChannels, 0);
+    if (!pData) {
+        throw Exception("Error loading '"+sFilename+"': "+stbi_failure_reason());
+    }
+    switch(numChannels) {
+        case 1:
+            pf = I8;
+            break;
+        case 3:
+            pf = R8G8B8;
+            break;
+        case 4:
+            pf = R8G8B8A8;
+            break;
+        default:
+            pf = NO_PIXELFORMAT;
+            LAVA_ASSERT(false);
+    }
+    return Bitmap(ivec2(w, h), pf, pData, w*numChannels);
 }
 
 void Bitmap::save(const string& sFilename) const
@@ -145,7 +169,7 @@ bool Bitmap::operator ==(const Bitmap& otherBmp)
                     }
                     break;
                 default:
-                    if (memcmp(pDest, pSrc, lineLen) != 0) {
+                    if (memcmp(pDest, pSrc, size_t(lineLen)) != 0) {
                         return false;
                     }
             }
@@ -198,7 +222,7 @@ float Bitmap::getAvg() const
 {
     LAVA_ASSERT(m_PF != R5G6B5 && m_PF != B5G6R5);
 
-    float sum = 0;
+    int sum = 0;
     int componentsPerPixel = 0;
     unsigned numComponents = 0;
     for (unsigned i=0; i<m_pPlanes.size(); ++i) {
@@ -244,7 +268,7 @@ float Bitmap::getAvg() const
         }
         numComponents += planeSize.x * planeSize.y * componentsPerPixel;
     }
-    return sum/numComponents;
+    return float(sum)/numComponents;
 }
 
 float Bitmap::getStdev() const
@@ -303,8 +327,7 @@ float Bitmap::getStdev() const
         }
         numComponents += planeSize.x * planeSize.y * componentsPerPixel;
     }
-    sum /= numComponents;
-    return ::sqrt(sum);
+    return ::sqrt(double(sum/numComponents));
 }
 
 void Bitmap::dump(bool bDumpPixels) const
