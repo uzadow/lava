@@ -25,6 +25,7 @@ public:
     Bitmap(glm::ivec2 size, PixelFormat pf, const std::vector<uint8_t*>& pPlanes,
             const std::vector<int>& strides);
     Bitmap(const Bitmap& origBmp);
+    Bitmap(Bitmap&& origBmp) = default;
     virtual ~Bitmap();
 
     static Bitmap load(const std::string& sName);
