@@ -439,13 +439,12 @@ void Bitmap::allocBits()
 {
     LAVA_ASSERT(m_pPlanes.empty());
     LAVA_ASSERT(m_Size.x > 0 && m_Size.y > 0);
-    checkValidSize();
     if (pixelFormatIsPlanar(m_PF)) {
         LAVA_ASSERT(m_PF == YCbCr420p || m_PF == YCbCrJ420p || m_PF == YCbCrA420p);
 
         allocPlane(m_Size); // Y Plane
 
-        ivec2 uvSize = m_Size/2;
+        ivec2 uvSize = (m_Size+ivec2(1,1))/2;  //Half size, round up.
         allocPlane(uvSize); // U,V Planes
         allocPlane(uvSize);
 
@@ -464,22 +463,6 @@ void Bitmap::allocPlane(const ivec2& size)
     auto pBits = new uint8_t[size_t(stride)*size.y];
     m_pPlanes.push_back(pBits);
     m_Strides.push_back(stride);
-}
-
-void Bitmap::checkValidSize() const
-{
-    switch (m_PF) {
-        case YCbCr422:
-            LAVA_ASSERT_MSG(m_Size.x%2 == 0, "Odd width for YCbCr422 bitmap.");
-            break;
-        case YCbCr420p:
-        case YCbCrJ420p:
-        case YCbCrA420p:
-            LAVA_ASSERT_MSG((m_Size.x%2 == 0 && m_Size.y%2 == 0), "Odd size for YCbCr420 bitmap.");
-            break;
-        default:
-            break;
-    }
 }
 
 void Bitmap::setEpsilon(float maxAvgDiff, float maxStdevDiff)

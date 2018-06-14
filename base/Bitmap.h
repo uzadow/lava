@@ -61,7 +61,6 @@ private:
     void initPlaneWithData(unsigned i, const uint8_t* pBits, int stride);
     void allocBits();
     void allocPlane(const glm::ivec2& size);
-    void checkValidSize() const;
 
     glm::ivec2 m_Size;
     PixelFormat m_PF;
