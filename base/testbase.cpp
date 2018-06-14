@@ -28,7 +28,7 @@ public:
         checkOnePF(R8G8B8A8, glm::ivec2(5,7), 0, 0x80);
         checkOnePF(YCbCr420p, glm::ivec2(6,8), 0, 5);
 
-        checkLoad();
+        checkLoadSave();
     }
 
 private:
@@ -51,12 +51,17 @@ private:
         TEST(pDiffBmp->getStdev() == 0);
     }
 
-    void checkLoad()
+    void checkLoadSave()
     {
         TEST_MSG("Loader");
-        BitmapPtr pBmp1(new Bitmap(Bitmap::load(sMediaDir + "/invaders.png")));
-        BitmapPtr pBmp2(new Bitmap(Bitmap::load(sMediaDir + "/invaders.jpg")));
-        TEST(Bitmap::almostEqual(*pBmp1, *pBmp2));
+        Bitmap bmp1 = Bitmap::load(sMediaDir + "/invaders.png");
+        bmp1.saveToPNG(sMediaDir + "/save_invaders1.png");
+        TEST(bmp1.getPixelFormat() == R8G8B8);
+        Bitmap bmp2 = Bitmap::load(sMediaDir + "/invaders.jpg");
+        TEST(bmp2.getPixelFormat() == YCbCrJ420p);
+        Bitmap bmp3 = bmp2.createStdBmp(); // Convert to RGB
+        bmp3.saveToPNG(sMediaDir + "/save_invaders3.png");
+        TEST(Bitmap::almostEqual(bmp1, bmp3));
 
         TEST_EXCEPTION(Bitmap::load("FileDoesntExist.png"), Exception);
     }

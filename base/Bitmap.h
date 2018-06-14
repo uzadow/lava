@@ -30,7 +30,7 @@ public:
     virtual ~Bitmap();
 
     static Bitmap load(const std::string& sName);
-    void save(const std::string& sName) const;
+    void saveToPNG(const std::string& sName) const;
 
     glm::ivec2 getSize() const;
     glm::ivec2 getPlaneSize(unsigned i) const;
@@ -40,7 +40,6 @@ public:
     const uint8_t* getPixels(unsigned i) const;
     int getBytesPerPixel() const;
     int getLineLen(unsigned i) const;
-    int getMemNeeded() const;
 
     // TODO: operator -
     BitmapPtr subtract(const Bitmap& otherBmp);
@@ -49,6 +48,10 @@ public:
 
     bool operator ==(const Bitmap& otherBmp);
     void dump(bool bDumpPixels=false) const;
+
+    // Returns a copy of this Bitmap with Pixelformat I8, R8G8B8, or R8G8B8A8.
+    // Runs conversion if necessary.
+    Bitmap createStdBmp() const;
 
     static int getPreferredStride(int width, PixelFormat pf);
 
@@ -61,6 +64,7 @@ private:
     void initPlaneWithData(unsigned i, const uint8_t* pBits, int stride);
     void allocBits();
     void allocPlane(const glm::ivec2& size);
+    Bitmap createRGBFromYUVPlanarBmp() const;
 
     glm::ivec2 m_Size;
     PixelFormat m_PF;

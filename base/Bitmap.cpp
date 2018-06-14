@@ -4,6 +4,8 @@
 #include "MathHelper.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 #include <cstring>
 #include <cstdlib>
@@ -81,12 +83,12 @@ Bitmap Bitmap::load(const string& sFilename)
     int subsamp;
     int colorspace;
     uint8_t* pCompressedImg = (uint8_t*)sCompressedImg.c_str();
-    int len = sCompressedImg.size();
+    uint64_t len = sCompressedImg.size();
 
     int err = tjDecompressHeader3(s_JPEGDecompressor, pCompressedImg, len, &w, &h, &subsamp, &colorspace);
     if (err == 0 && colorspace == TJCS_YCbCr && subsamp == TJSAMP_420) {
         // This is a YUV 4:2:0 jpeg. Load without conversion to RGB for speed using TurboJPEG.
-        Bitmap bmp(ivec2(w, h), YCbCr420p);
+        Bitmap bmp(ivec2(w, h), YCbCrJ420p);
         uint8_t** pPlanes = bmp.m_pPlanes.data();
         int* pStrides = bmp.m_Strides.data();
         err = tjDecompressToYUVPlanes(s_JPEGDecompressor, pCompressedImg, len, pPlanes, w, pStrides, h, 0);
@@ -121,9 +123,13 @@ Bitmap Bitmap::load(const string& sFilename)
     }
 }
 
-void Bitmap::save(const string& sFilename) const
+void Bitmap::saveToPNG(const string& sFilename) const
 {
-
+//    LAVA_ASSERT(!pixelFormatIsPlanar(m_PF));
+    int rc = stbi_write_png(sFilename.c_str(), m_Size.x, m_Size.y, getBytesPerPixel(), m_pPlanes[0], m_Strides[0]);
+    if (!rc) {
+        throw Exception("Could not save bitmap to "+sFilename);
+    }
 }
 
 ivec2 Bitmap::getSize() const
@@ -134,11 +140,11 @@ ivec2 Bitmap::getSize() const
 ivec2 Bitmap::getPlaneSize(unsigned i) const
 {
     LAVA_ASSERT(i < m_pPlanes.size());
-    // We're assuming all planar bitmaps are YCbCr420 or YCbCrA420
+    // We're assuming all planar bitmaps are YCbCr420, YCbCrJ420p, or YCbCrA420
     if (i == 0 || i == 3) {
         return m_Size;
     } else {
-        return m_Size/2;
+        return (m_Size+ivec2(1,1))/2;
     }
 
 }
@@ -174,12 +180,6 @@ int Bitmap::getBytesPerPixel() const
 int Bitmap::getLineLen(unsigned i) const
 {
     return getPlaneSize(i).x*getBytesPerPixel();
-}
-
-int Bitmap::getMemNeeded() const
-{
-    LAVA_ASSERT(!pixelFormatIsPlanar(m_PF)); // TODO
-    return m_Strides[0]*m_Size.y;
 }
 
 bool Bitmap::operator ==(const Bitmap& otherBmp)
@@ -406,6 +406,22 @@ void Bitmap::dump(bool bDumpPixels) const
     cerr << dec;
 }
 
+Bitmap Bitmap::createStdBmp() const
+{
+    switch (m_PF) {
+        case I8:
+        case R8G8B8:
+        case R8G8B8A8:
+            return *this;
+        case YCbCrJ420p: {
+            return createRGBFromYUVPlanarBmp();
+        }
+        default:
+            LAVA_ASSERT(false);
+            return *this;
+    }
+}
+
 int Bitmap::getPreferredStride(int width, PixelFormat pf)
 {
     return (((width*lava::getBytesPerPixel(pf))-1)/4+1)*4;
@@ -442,7 +458,9 @@ void Bitmap::allocBits()
     if (pixelFormatIsPlanar(m_PF)) {
         LAVA_ASSERT(m_PF == YCbCr420p || m_PF == YCbCrJ420p || m_PF == YCbCrA420p);
 
-        allocPlane(m_Size); // Y Plane
+        // Note that we allocate a line and a column more than the size of the image because TURBOJpeg needs this
+        // space while decoding.
+        allocPlane(m_Size+ivec2(1,1)); // Y Plane
 
         ivec2 uvSize = (m_Size+ivec2(1,1))/2;  //Half size, round up.
         allocPlane(uvSize); // U,V Planes
@@ -480,12 +498,74 @@ bool Bitmap::almostEqual(const Bitmap& bmp1, const Bitmap& bmp2)
         return false;
     }
     if (fabs(bmp1.getAvg() - bmp2.getAvg()) > s_MaxAvgDiff) {
+        cerr << fabs(bmp1.getAvg() - bmp2.getAvg()) << endl;
         return false;
     }
     if (fabs(bmp1.getStdev() - bmp2.getStdev()) > s_MaxStdevDiff) {
+        cerr << fabs(bmp1.getStdev() - bmp2.getStdev()) << endl;
         return false;
     }
     return true;
+}
+
+void YUVtoRGBPixel(uint8_t* pDest, int y, int u, int v)
+{
+    // u = Cb, v = Cr
+    int u1 = u - 128;
+    int v1 = v - 128;
+    int tempy = 298*(y-16);
+    int b = (tempy + 516 * u1           ) >> 8;
+    int g = (tempy - 100 * u1 - 208 * v1) >> 8;
+    int r = (tempy            + 409 * v1) >> 8;
+
+    pDest[0] = (uint8_t)std::max(std::min(r,255),0);
+    pDest[1] = (uint8_t)std::max(std::min(g,255),0);
+    pDest[2] = (uint8_t)std::max(std::min(b,255),0);
+}
+
+
+void YUVJtoRGBPixel(uint8_t* pDest, int y, int u, int v)
+{
+    // u = Cb, v = Cr
+    int u1 = u - 128;
+    int v1 = v - 128;
+    int tempy = 256*y;
+    int b = (tempy + 452 * u1           ) >> 8;
+    int g = (tempy -  88 * u1 - 182 * v1) >> 8;
+    int r = (tempy            + 358 * v1) >> 8;
+
+    pDest[0] = (uint8_t)std::max(std::min(r,255),0);
+    pDest[1] = (uint8_t)std::max(std::min(g,255),0);
+    pDest[2] = (uint8_t)std::max(std::min(b,255),0);
+}
+
+Bitmap Bitmap::createRGBFromYUVPlanarBmp() const
+{
+    LAVA_ASSERT(m_PF == YCbCrJ420p || m_PF == YCbCr420p);
+    // Slow!
+    Bitmap destBmp(m_Size, R8G8B8);
+    const uint8_t* pYSrc = m_pPlanes[0];
+    const uint8_t* pUSrc = m_pPlanes[1];
+    const uint8_t* pVSrc = m_pPlanes[2];
+    uint8_t* pDestLine = destBmp.getPixels(0);
+
+    for (int y = 0; y < m_Size.y; ++y) {
+        for (int x = 0; x < m_Size.x; ++x) {
+            if (m_PF == YCbCr420p) {
+                YUVtoRGBPixel(pDestLine + x*3, pYSrc[x], pUSrc[x/2], pVSrc[x/2]);
+            } else {
+                YUVJtoRGBPixel(pDestLine + x*3, pYSrc[x], pUSrc[x/2], pVSrc[x/2]);
+            }
+        }
+        pDestLine += destBmp.getStride(0);
+        pYSrc += m_Strides[0];
+        if (y % 2 == 1) {
+            pUSrc += m_Strides[1];
+            pVSrc += m_Strides[2];
+        }
+    }
+
+    return destBmp;
 }
 
 };
