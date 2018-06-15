@@ -29,20 +29,8 @@ using namespace std;
 namespace lava {
 
 Exception::Exception(const string& sErr)
-    : std::exception(),
-      m_sErr (sErr)
+    : std::runtime_error(sErr)
 {
-}
-
-Exception::Exception(const Exception& ex)
-    : std::exception(),
-      m_sErr (ex.m_sErr)
-{
-}
-
-const char* Exception::what() const throw()
-{
-    return m_sErr.c_str();
 }
 
 void debugBreak()

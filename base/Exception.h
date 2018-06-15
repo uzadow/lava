@@ -1,20 +1,15 @@
 #pragma once
 
 #include <string>
-#include <exception>
+#include <stdexcept>
 
 
 namespace lava {
 
-class Exception: public std::exception
+class Exception: public std::runtime_error
 {
     public:
-        Exception(const std::string& sErr = "");
-        Exception(const Exception& ex);
-        virtual const char* what() const throw();
-
-    private:
-        std::string m_sErr;
+        explicit Exception(const std::string& sErr = "");
 };
 
 void debugBreak();

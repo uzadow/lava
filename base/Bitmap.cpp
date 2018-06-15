@@ -20,28 +20,28 @@ namespace lava {
 
 float Bitmap::s_MaxAvgDiff = 0.5;
 float Bitmap::s_MaxStdevDiff = 2;
-tjhandle Bitmap::s_JPEGDecompressor = 0;
+tjhandle Bitmap::s_JPEGDecompressor = nullptr;
 
-Bitmap::Bitmap(vec2 size, PixelFormat pf)
+Bitmap::Bitmap(const vec2& size, PixelFormat pf)
     : m_Size(size),
       m_PF(pf)
 {
     allocBits();
 }
 
-Bitmap::Bitmap(ivec2 size, PixelFormat pf)
+Bitmap::Bitmap(const ivec2& size, PixelFormat pf)
     : Bitmap(vec2(size), pf)
 {
 }
 
-Bitmap::Bitmap(ivec2 size, PixelFormat pf, uint8_t* pBits, int stride)
+Bitmap::Bitmap(const ivec2& size, PixelFormat pf, uint8_t* pBits, uint32_t stride)
     : Bitmap(size, pf)
 {
     initWithData(pBits, stride);
 }
 
-Bitmap::Bitmap(ivec2 size, PixelFormat pf, const vector<uint8_t*>& pPlanes,
-        const std::vector<int>& strides)
+Bitmap::Bitmap(const ivec2& size, PixelFormat pf, const vector<uint8_t*>& pPlanes,
+        const std::vector<uint32_t>& strides)
     : Bitmap(size, pf)
 {
     initWithData(pPlanes, strides);
@@ -90,7 +90,7 @@ Bitmap Bitmap::load(const string& sFilename)
         // This is a YUV 4:2:0 jpeg. Load without conversion to RGB for speed using TurboJPEG.
         Bitmap bmp(ivec2(w, h), YCbCrJ420p);
         uint8_t** pPlanes = bmp.m_pPlanes.data();
-        int* pStrides = bmp.m_Strides.data();
+        int* pStrides = (int*)bmp.m_Strides.data();
         err = tjDecompressToYUVPlanes(s_JPEGDecompressor, pCompressedImg, len, pPlanes, w, pStrides, h, 0);
         if (err == -1) {
             throw Exception("Error loading '" + sFilename + "': " + tjGetErrorStr());
@@ -119,7 +119,7 @@ Bitmap Bitmap::load(const string& sFilename)
                 pf = NO_PIXELFORMAT;
                 LAVA_ASSERT(false);
         }
-        return Bitmap(ivec2(w, h), pf, pData, w*numChannels);
+        return Bitmap(ivec2(w, h), pf, pData, (uint32_t)(w*numChannels));
     }
 }
 
@@ -149,7 +149,7 @@ ivec2 Bitmap::getPlaneSize(unsigned i) const
 
 }
 
-int Bitmap::getStride(unsigned i) const
+uint32_t Bitmap::getStride(unsigned i) const
 {
     LAVA_ASSERT(i < m_Strides.size());
     return m_Strides[i];
@@ -369,7 +369,7 @@ float Bitmap::getStdev() const
         }
         numComponents += planeSize.x * planeSize.y * componentsPerPixel;
     }
-    return ::sqrt(double(sum/numComponents));
+    return glm::sqrt(sum/numComponents);
 }
 
 void Bitmap::dump(bool bDumpPixels) const
@@ -422,26 +422,26 @@ Bitmap Bitmap::createStdBmp() const
     }
 }
 
-int Bitmap::getPreferredStride(int width, PixelFormat pf)
+uint32_t Bitmap::getPreferredStride(int width, PixelFormat pf)
 {
     return (((width*lava::getBytesPerPixel(pf))-1)/4+1)*4;
 }
 
-void Bitmap::initWithData(const uint8_t* pBits, int stride)
+void Bitmap::initWithData(const uint8_t* pBits, uint32_t stride)
 {
     initPlaneWithData(0, pBits, stride);
 }
 
-void Bitmap::initWithData(const std::vector<uint8_t *>& pPlanes, const std::vector<int>& strides)
+void Bitmap::initWithData(const std::vector<uint8_t *>& pPlanes, const std::vector<uint32_t>& strides)
 {
     for (unsigned i=0; i<m_pPlanes.size(); ++i) {
         initPlaneWithData(i, pPlanes[i], strides[i]);
     }
 }
 
-void Bitmap::initPlaneWithData(unsigned i, const uint8_t* pBits, int stride)
+void Bitmap::initPlaneWithData(unsigned i, const uint8_t* pBits, uint32_t stride)
 {
-    if (m_Strides[i] == stride && stride == (m_Size.x*getBytesPerPixel())) {
+    if (m_Strides[i] == stride && stride == uint32_t(m_Size.x*getBytesPerPixel())) {
         memcpy(m_pPlanes[i], pBits, stride*m_Size.y);
     } else {
         for (int y = 0; y < m_Size.y; ++y) {
@@ -477,7 +477,7 @@ void Bitmap::allocBits()
 
 void Bitmap::allocPlane(const ivec2& size)
 {
-    int stride = getPreferredStride(size.x, m_PF);
+    uint32_t stride = getPreferredStride(size.x, m_PF);
     auto pBits = new uint8_t[size_t(stride)*size.y];
     m_pPlanes.push_back(pBits);
     m_Strides.push_back(stride);
@@ -514,9 +514,9 @@ void YUVtoRGBPixel(uint8_t* pDest, int y, int u, int v)
     int u1 = u - 128;
     int v1 = v - 128;
     int tempy = 298*(y-16);
-    int b = (tempy + 516 * u1           ) >> 8;
-    int g = (tempy - 100 * u1 - 208 * v1) >> 8;
-    int r = (tempy            + 409 * v1) >> 8;
+    int b = (tempy + 516 * u1           ) / 256;
+    int g = (tempy - 100 * u1 - 208 * v1) / 256;
+    int r = (tempy            + 409 * v1) / 256;
 
     pDest[0] = (uint8_t)std::max(std::min(r,255),0);
     pDest[1] = (uint8_t)std::max(std::min(g,255),0);
@@ -530,9 +530,9 @@ void YUVJtoRGBPixel(uint8_t* pDest, int y, int u, int v)
     int u1 = u - 128;
     int v1 = v - 128;
     int tempy = 256*y;
-    int b = (tempy + 452 * u1           ) >> 8;
-    int g = (tempy -  88 * u1 - 182 * v1) >> 8;
-    int r = (tempy            + 358 * v1) >> 8;
+    int b = (tempy + 452 * u1           ) / 256;
+    int g = (tempy -  88 * u1 - 182 * v1) / 256;
+    int r = (tempy            + 358 * v1) / 256;
 
     pDest[0] = (uint8_t)std::max(std::min(r,255),0);
     pDest[1] = (uint8_t)std::max(std::min(g,255),0);
