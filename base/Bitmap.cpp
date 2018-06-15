@@ -497,11 +497,11 @@ bool Bitmap::almostEqual(const Bitmap& bmp1, const Bitmap& bmp2)
     if (bmp1.getPixelFormat() != bmp2.getPixelFormat()) {
         return false;
     }
-    if (fabs(bmp1.getAvg() - bmp2.getAvg()) > s_MaxAvgDiff) {
+    if (!lava::almostEqual(bmp1.getAvg(), bmp2.getAvg(), s_MaxAvgDiff)) {
         cerr << fabs(bmp1.getAvg() - bmp2.getAvg()) << endl;
         return false;
     }
-    if (fabs(bmp1.getStdev() - bmp2.getStdev()) > s_MaxStdevDiff) {
+    if (!lava::almostEqual(bmp1.getStdev(), bmp2.getStdev(), s_MaxStdevDiff)) {
         cerr << fabs(bmp1.getStdev() - bmp2.getStdev()) << endl;
         return false;
     }

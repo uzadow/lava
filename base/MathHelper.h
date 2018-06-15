@@ -1,15 +1,16 @@
 #pragma once
 
 #define _USE_MATH_DEFINES  // For M_PI
-#include <math.h>
+#include <cmath>
+#include <cstdint>
 
 namespace lava {
 
 static const float EPSILON = 0.00001f;
 
-bool ispow2(int n);
+bool ispow2(uint32_t n);
 
-int nextpow2(int n);
+uint32_t nextpow2(uint32_t n);
 
 int safeCeil(float d);
 

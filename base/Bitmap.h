@@ -41,7 +41,6 @@ public:
     int getBytesPerPixel() const;
     int getLineLen(unsigned i) const;
 
-    // TODO: operator -
     BitmapPtr subtract(const Bitmap& otherBmp);
     float getAvg() const;
     float getStdev() const;

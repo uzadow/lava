@@ -8,8 +8,8 @@ namespace lava {
 class TestSuite: public Test
 {
 public:
-    TestSuite(const std::string& sName);
-    virtual ~TestSuite();
+    explicit TestSuite(const std::string& sName);
+    virtual ~TestSuite() = default;
 
     void addTest(TestPtr pNewTest);
 

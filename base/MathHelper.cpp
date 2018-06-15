@@ -2,17 +2,16 @@
 #include "MathHelper.h"
 
 #include <math.h>
-
-using namespace std;
+#include <cstdint>
 
 namespace lava {
 
-bool ispow2(int n)
+bool ispow2(uint32_t n)
 {
     return ((n & (n-1)) == 0);
 }
 
-int nextpow2(int n)
+uint32_t nextpow2(uint32_t n)
 {
     n--;
     n |= n >> 1;  // handle  2 bit numbers
@@ -26,7 +25,7 @@ int nextpow2(int n)
 
 int safeCeil(float d) 
 {
-    if (fabs(d-int(d)) < EPSILON) {
+    if (fabsf(d-int(d)) < EPSILON) {
         return int(d);
     } else {
         return int(d)+1;
@@ -46,12 +45,12 @@ float invSqrt(float x)
     x *= 1.5f - xhalf*x*x;
     return x;
 #endif
-    return 1/sqrt(x);
+    return 1/sqrtf(x);
 }
 
 bool almostEqual(float d1, float d2, float epsilon)
 {
-    return (fabs(d1-d2)<epsilon);
+    return (fabsf(d1-d2)<epsilon);
 }
 
 }

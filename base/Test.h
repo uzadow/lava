@@ -8,27 +8,27 @@ namespace lava {
 class Test
 {
 public:
-    Test(const std::string & sName, int indentLevel);
-    virtual ~Test();
+    Test(const std::string& sName, unsigned indentLevel);
+    virtual ~Test() = default;
 
     bool isOk();
     virtual void runTests() = 0;
 
-    void test(bool b, const char * pszFile, int line);
+    void test(bool b, const char * pszFile, unsigned line);
     void setFailed();
 
     int getNumSucceeded() const;
     int getNumFailed() const;
     const std::string& getName() const;
-    int getIndentLevel() const;
+    unsigned getIndentLevel() const;
 
     void aggregateStatistics(const Test& childTest);
     virtual void printResults();
 
 private:
-    int m_IndentLevel;
-    int m_NumSucceeded;
-    int m_NumFailed;
+    unsigned m_IndentLevel;
+    unsigned m_NumSucceeded;
+    unsigned m_NumFailed;
     std::string m_sName;
 };
 

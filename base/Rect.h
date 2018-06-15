@@ -14,11 +14,11 @@ public:
     Vec2 tl;
     Vec2 br;
 
-    Rect();
+    Rect() = default;
     Rect(NUM left, NUM top, NUM right, NUM bottom);
     Rect(const Vec2& TL, const Vec2& BR);
     template<typename ORIGNUM, glm::precision origPrecision>
-            Rect(const Rect<ORIGNUM, origPrecision>& rc);
+            explicit Rect(const Rect<ORIGNUM, origPrecision>& rc);
 
     bool operator ==(const Rect<NUM, precision>& rect) const;
     bool operator !=(const Rect<NUM, precision>& rect) const;
@@ -35,7 +35,6 @@ public:
     void expand(const Vec2& pt);
     void intersect(const Rect<NUM, precision>& rect);
     Vec2 size() const;
-    Vec2 cropPoint(const Vec2& pt) const;
 };
 
 typedef Rect<float, glm::highp> FRect;
@@ -47,10 +46,6 @@ std::ostream& operator<<( std::ostream& os, const Rect<NUM, precision> &r)
     os << "(" << r.tl << "-" << r.br << ")";
     return os;
 }
-
-template<typename NUM, glm::precision precision>
-Rect<NUM, precision>::Rect()
-{}
 
 template<typename NUM, glm::precision precision>
 Rect<NUM, precision>::Rect(const Vec2& TL, const Vec2& BR)
@@ -131,17 +126,14 @@ template<typename NUM, glm::precision precision>
 bool Rect<NUM, precision>::contains(const Rect<NUM, precision>& rect) const
 {
     Vec2 brpt (rect.br.x-1, rect.br.y-1);
-    return Contains(rect.tl) && Contains(brpt);
+    return contains(rect.tl) && contains(brpt);
 }
 
 template<typename NUM, glm::precision precision>
 bool Rect<NUM, precision>::intersects(const Rect<NUM, precision>& rect) const
-{   
-    if (rect.br.x <= tl.x || rect.tl.x >= br.x ||
-        rect.br.y <= tl.y || rect.tl.y >= br.y)
-      return false;
-    else
-      return true;
+{
+    return !(rect.br.x <= tl.x || rect.tl.x >= br.x ||
+      rect.br.y <= tl.y || rect.tl.y >= br.y);
 }
 
 template<typename NUM, glm::precision precision>

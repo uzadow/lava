@@ -7,9 +7,7 @@ add_library(base
         PixelFormat.cpp
         StringHelper.cpp
         Test.cpp
-        TestSuite.cpp
-        stb_image.h
-        stb_image_write.h)
+        TestSuite.cpp)
 
 target_link_libraries(base
         PUBLIC turbojpeg)

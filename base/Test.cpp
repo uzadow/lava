@@ -4,7 +4,7 @@ using namespace std;
 
 namespace lava {
 
-Test::Test(const string & sName, int indentLevel)
+Test::Test(const string& sName, unsigned indentLevel)
     : m_IndentLevel(indentLevel),
       m_NumSucceeded(0),
       m_NumFailed(0),
@@ -12,11 +12,7 @@ Test::Test(const string & sName, int indentLevel)
 {
 }
 
-Test::~Test()
-{
-}
-
-void Test::test(bool b, const char * pszFile, int line)
+void Test::test(bool b, const char * pszFile, unsigned line)
 {
     if (b) {
         m_NumSucceeded++;
@@ -48,7 +44,7 @@ int Test::getNumFailed() const
     return m_NumFailed;
 }
 
-int Test::getIndentLevel() const
+unsigned Test::getIndentLevel() const
 {
     return m_IndentLevel;
 }

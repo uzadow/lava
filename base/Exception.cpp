@@ -51,7 +51,6 @@ void lavaAssert(bool b, const char * pszFile, int line, const char * pszReason)
         if (pszReason) {
             ss << "Reason: " << pszReason << endl;
         }
-//        dumpBacktrace();
         throw(Exception(ss.str()));
     }
 }

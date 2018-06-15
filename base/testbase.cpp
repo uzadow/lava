@@ -2,6 +2,7 @@
 
 #include "Exception.h"
 #include "Bitmap.h"
+#include "Rect.h"
 
 #include <cstdio>
 
@@ -76,7 +77,7 @@ private:
         TEST(stride >= minStride);
 
         TEST(pBits[0] == firstByte);
-        uint8_t bpp = getBytesPerPixel(pf);
+        unsigned bpp = getBytesPerPixel(pf);
         unsigned offset = (size.y-1)*stride + (size.x)*bpp - 1;
         TEST(pBits[offset] == lastByte);
     }
@@ -102,14 +103,14 @@ private:
             glm::ivec2 planeSize = pBmp->getPlaneSize(p);
             for (int y = 0; y < planeSize.y; ++y) {
                 for (int x = 0; x < planeSize.x; ++x) {
-                    unsigned char * pPixel = pBmp->getPixels(p) + y*pBmp->getStride(p) + x*pBmp->getBytesPerPixel();
-                    *(pPixel) = x;
+                    uint8_t * pPixel = pBmp->getPixels(p) + y*pBmp->getStride(p) + x*pBmp->getBytesPerPixel();
+                    *(pPixel) = uint8_t(x);
                     if (bpp > 1) {
                         *(pPixel+1) = 0;
                     }
                     if (bpp > 2) {
-                        *(pPixel+2) = x*16;
-                        *(pPixel+1) = 16*y;
+                        *(pPixel+2) = uint8_t(x*16);
+                        *(pPixel+1) = uint8_t(16*y);
                     }
                     if (bpp > 3) {
                         *(pPixel+3) = 0x80;
