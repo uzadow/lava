@@ -22,7 +22,7 @@ class Bitmap
 public:
     Bitmap(const glm::vec2& size, PixelFormat pf);
     Bitmap(const glm::ivec2& size, PixelFormat pf);
-    Bitmap(const glm::ivec2& size, PixelFormat pf, uint8_t* pBits, uint32_t stride);
+    Bitmap(const glm::ivec2& size, PixelFormat pf, uint8_t* pBits, uint32_t stride, bool bCopyData=true);
     Bitmap(const glm::ivec2& size, PixelFormat pf, const std::vector<uint8_t*>& pPlanes,
             const std::vector<uint32_t>& strides);
     Bitmap(const Bitmap& origBmp);

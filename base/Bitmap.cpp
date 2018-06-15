@@ -34,10 +34,17 @@ Bitmap::Bitmap(const ivec2& size, PixelFormat pf)
 {
 }
 
-Bitmap::Bitmap(const ivec2& size, PixelFormat pf, uint8_t* pBits, uint32_t stride)
-    : Bitmap(size, pf)
+Bitmap::Bitmap(const ivec2& size, PixelFormat pf, uint8_t* pBits, uint32_t stride, bool bCopyData)
+    : m_Size(size),
+      m_PF(pf)
 {
-    initWithData(pBits, stride);
+    if (bCopyData) {
+        allocBits();
+        initWithData(pBits, stride);
+    } else {
+        m_pPlanes.push_back(pBits);
+        m_Strides.push_back(stride);
+    }
 }
 
 Bitmap::Bitmap(const ivec2& size, PixelFormat pf, const vector<uint8_t*>& pPlanes,
@@ -56,7 +63,7 @@ Bitmap::Bitmap(const Bitmap& origBmp)
 Bitmap::~Bitmap()
 {
     for (auto pBits: m_pPlanes) {
-        delete[] pBits;
+        free(pBits);
     }
     m_pPlanes.clear();
 }
@@ -119,7 +126,7 @@ Bitmap Bitmap::load(const string& sFilename)
                 pf = NO_PIXELFORMAT;
                 LAVA_ASSERT(false);
         }
-        return Bitmap(ivec2(w, h), pf, pData, (uint32_t)(w*numChannels));
+        return Bitmap(ivec2(w, h), pf, pData, (uint32_t)(w*numChannels), false);
     }
 }
 
@@ -441,11 +448,12 @@ void Bitmap::initWithData(const std::vector<uint8_t *>& pPlanes, const std::vect
 
 void Bitmap::initPlaneWithData(unsigned i, const uint8_t* pBits, uint32_t stride)
 {
-    if (m_Strides[i] == stride && stride == uint32_t(m_Size.x*getBytesPerPixel())) {
+    ivec2 size = getPlaneSize(i);
+    if (m_Strides[i] == stride && stride == uint32_t(size.x*getBytesPerPixel())) {
         memcpy(m_pPlanes[i], pBits, stride*m_Size.y);
     } else {
-        for (int y = 0; y < m_Size.y; ++y) {
-            memcpy(m_pPlanes[i]+m_Strides[i]*y, pBits+stride*y, m_Strides[i]);
+        for (int y = 0; y < size.y; ++y) {
+            memcpy(m_pPlanes[i]+m_Strides[i]*y, pBits+stride*y, uint32_t(size.x*getBytesPerPixel()));
         }
     }
 }
@@ -478,7 +486,7 @@ void Bitmap::allocBits()
 void Bitmap::allocPlane(const ivec2& size)
 {
     uint32_t stride = getPreferredStride(size.x, m_PF);
-    auto pBits = new uint8_t[size_t(stride)*size.y];
+    auto pBits = (uint8_t *)malloc(size_t(stride)*size.y);
     m_pPlanes.push_back(pBits);
     m_Strides.push_back(stride);
 }
