@@ -3,14 +3,71 @@
 #include "Exception.h"
 #include "Bitmap.h"
 #include "Rect.h"
+#include "GLMHelper.h"
+#include "StringHelper.h"
 
 #include <cstdio>
 
 using namespace std;
+using namespace glm;
 
 const std::string sMediaDir = "../../testmedia";
 
 namespace lava {
+
+class RectTest: public Test
+{
+public:
+    RectTest()
+            : Test("RectTest", 2)
+    {
+    }
+
+    void runTests()
+    {
+        runTests<int>();
+        runTests<float>();
+
+    }
+
+private:
+    template <class NUM>
+    void runTests()
+    {
+        TEST_MSG(getFriendlyTypeName<NUM>(0));
+        typedef detail::tvec2<NUM, highp> VEC_T;
+        Rect<NUM> r1(10, 10, 22, 22);
+        Rect<NUM> r2(ivec2(10,10), ivec2(22,22));
+        TEST(r1 == r2);
+        TEST((r1.size() == VEC_T(12, 12)));
+        TEST(r1.center() == VEC_T(16,16));
+        Rect<NUM> r3(r1);
+        TEST(r3 == r1);
+        r3.setSize(VEC_T(20, 20));
+        TEST((r3.size() == VEC_T(20, 20)));
+
+        TEST(r3.contains(VEC_T(15,15)));
+        TEST(!r3.contains(VEC_T(9,15)));
+        TEST(!r3.contains(VEC_T(31,15)));
+        TEST(!r3.contains(VEC_T(15,9)));
+        TEST(!r3.contains(VEC_T(15,31)));
+
+        TEST(r3.contains(r1));
+        Rect<NUM> r4(11, 8, 13, 12);
+        TEST(r4.intersects(r3));
+        Rect<NUM> r5(11, 7, 13, 8);
+        TEST(!r5.intersects(r3));
+
+        r3.expand(r5);
+        cerr << r3 << endl;
+        TEST(r3 == Rect<NUM>(10, 7, 30, 30));
+        r3.expand(VEC_T(5, 40));
+        TEST(r3 == Rect<NUM>(5, 7, 30, 40));
+        Rect<NUM> r6(3, 8, 15, 12);
+        r3.intersect(r6);
+        TEST(r3 == Rect<NUM>(5, 8, 15, 12));
+    }
+};
 
 class BmpTest: public Test
 {
@@ -128,6 +185,7 @@ public:
     BaseTestSuite()
         : TestSuite("BaseTestSuite")
     {
+        addTest(TestPtr(new RectTest));
         addTest(TestPtr(new BmpTest));
     }
 };

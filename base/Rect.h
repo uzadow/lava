@@ -6,7 +6,7 @@ namespace lava {
 
 // Simple rectangle class.
 // If NUM is an integer, contains all points from tl up to but not including br.
-template<typename NUM, glm::precision precision>
+template<typename NUM, glm::precision precision=glm::highp>
 class Rect
 {
 public:
@@ -38,7 +38,7 @@ public:
 };
 
 typedef Rect<float, glm::highp> FRect;
-typedef Rect<int, glm::highp> IntRect;
+typedef Rect<int, glm::highp> IRect;
 
 template<typename NUM, glm::precision precision>
 std::ostream& operator<<( std::ostream& os, const Rect<NUM, precision> &r)
@@ -93,7 +93,7 @@ NUM Rect<NUM, precision>::height() const
 template<typename NUM, glm::precision precision>
 glm::detail::tvec2<NUM, precision> Rect<NUM, precision>::center() const
 {
-    return Vec2(tl+br)/2;
+    return Vec2(tl+br)/(NUM)2;
 }
 
 template<typename NUM, glm::precision precision>

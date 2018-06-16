@@ -389,7 +389,6 @@ void Bitmap::dump(bool bDumpPixels) const
         cerr << "    m_pPlanes[" << p << "]:" << m_pPlanes[p] << endl;
         cerr << "      stride:" << m_Strides[p] << endl;
 
-
         ivec2 dumpSize;
         dumpSize = getPlaneSize(p);
         if (!bDumpPixels) {
